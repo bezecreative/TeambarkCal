@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Week</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --slot-h: 30px;
+    --gutter: 58px;
+    --a: #2b59c3;      /* person A */
+    --b: #e35d6a;      /* person B */
+    --both: #2a9d8f;   /* together  */
+    --ink: #1c2230;
+    --ink-soft: #5a6478;
+    --paper: #f5f6f9;
+    --panel: #ffffff;
+    --line: #e9ebf1;
+    --line-strong: #d7dae4;
+    --ring: #aab3c7;
+    --shadow: 0 1px 2px rgba(28,34,48,.06), 0 8px 24px rgba(28,34,48,.08);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:"Inter",system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; padding:22px 20px 40px; }
+
+  /* ---------- header ---------- */
+  header{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:18px 28px; margin-bottom:18px; }
+  .title-block h1{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:700; font-size:30px; line-height:1; letter-spacing:-.02em; margin:0;
+  }
+  .title-block p{ margin:6px 0 0; font-size:13px; color:var(--ink-soft); max-width:46ch; }
+  .who{ display:flex; gap:14px; flex-wrap:wrap; margin-left:auto; }
+  .who-field{ display:flex; flex-direction:column; gap:4px; }
+  .who-field label{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); padding-left:2px; }
+  .who-field .dot-row{ display:flex; align-items:center; gap:7px; }
+  .who-field .dot{ width:11px; height:11px; border-radius:50%; flex:none; }
+  .who-field input{
+    font:inherit; font-weight:600; font-size:14px; color:var(--ink);
+    border:1px solid var(--line-strong); background:var(--panel);
+    border-radius:8px; padding:6px 9px; width:128px;
+  }
+  .who-field input:focus{ outline:2px solid var(--ring); outline-offset:1px; border-color:transparent; }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; box-shadow:var(--shadow); margin-bottom:14px;
+  }
+  .toolbar .hint{ font-size:12.5px; color:var(--ink-soft); }
+  .toolbar .hint b{ color:var(--ink); font-weight:600; }
+  .palette{ display:flex; gap:8px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    font-weight:600; font-size:13px; color:#fff;
+    border:none; border-radius:10px; padding:9px 13px;
+    cursor:grab; user-select:none; touch-action:none;
+    box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:transform .08s ease, box-shadow .12s ease;
+  }
+  .chip:active{ cursor:grabbing; transform:scale(.97); }
+  .chip svg{ opacity:.85; }
+  .chip.a{ background:var(--a); } .chip.b{ background:var(--b); } .chip.both{ background:var(--both); }
+  .spacer{ flex:1 1 auto; }
+  .tally{ display:flex; gap:7px; }
+  .tally .t{
+    display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+    background:#f1f3f8; border-radius:8px; padding:6px 9px; color:var(--ink);
+  }
+  .tally .t .dot{ width:9px; height:9px; border-radius:50%; }
+  .btn-clear{
+    font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-soft);
+    background:transparent; border:1px solid var(--line-strong); border-radius:9px;
+    padding:7px 11px; cursor:pointer;
+  }
+  .btn-clear:hover{ color:var(--b); border-color:var(--b); }
+
+  /* ---------- calendar ---------- */
+  .cal-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; }
+  .cal-scroll{ overflow:auto; max-height:calc(100vh - 220px); min-height:380px; }
+  .grid{
+    display:grid;
+    grid-template-columns: var(--gutter) repeat(7, minmax(112px,1fr));
+    grid-template-rows:auto calc(var(--slot-h) * 36);
+    min-width:880px;
+  }
+  .corner{ position:sticky; top:0; left:0; z-index:6; background:var(--panel); border-right:1px solid var(--line); border-bottom:1px solid var(--line-strong); }
+  .day-head{
+    position:sticky; top:0; z-index:4; background:var(--panel);
+    border-bottom:1px solid var(--line-strong); border-left:1px solid var(--line);
+    padding:11px 10px 9px; text-align:left;
+  }
+  .day-head .d-name{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:14px; letter-spacing:.01em; }
+  .day-head .d-sub{ font-size:10px; color:var(--ink-soft); letter-spacing:.06em; text-transform:uppercase; }
+  .day-head.weekend{ background:#fbfbfd; }
+
+  .gutter{ position:sticky; left:0; z-index:3; background:var(--panel); border-right:1px solid var(--line); position:relative; height:calc(var(--slot-h)*36); }
+  .gutter .tick{ position:absolute; right:8px; transform:translateY(-50%); font-size:10.5px; font-weight:500; color:var(--ink-soft); white-space:nowrap; }
+
+  .day-col{
+    position:relative; border-left:1px solid var(--line);
+    height:calc(var(--slot-h)*36);
+    background-image:
+      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--slot-h)*2 - 1px), var(--line-strong) calc(var(--slot-h)*2 - 1px), var(--line-strong) calc(var(--slot-h)*2)),
+      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--slot-h) - 1px), var(--line) calc(var(--slot-h) - 1px), var(--line) var(--slot-h));
+  }
+  .day-col.weekend{ background-color:#fcfcfe; }
+  .day-col.mouse{ cursor:crosshair; }
+
+  /* ---------- blocks ---------- */
+  .block{
+    position:absolute; left:2px; right:2px;
+    border-radius:7px; padding:5px 8px 4px; overflow:hidden;
+    color:#fff; cursor:grab; touch-action:none; user-select:none;
+    box-shadow:0 1px 2px rgba(0,0,0,.16);
+    transition:box-shadow .12s ease, filter .12s ease;
+  }
+  .block:hover{ filter:brightness(1.04); box-shadow:0 2px 8px rgba(0,0,0,.22); }
+  .block.owner-a{ background:var(--a); }
+  .block.owner-b{ background:var(--b); }
+  .block.owner-both{ background:var(--both); }
+  .block.selected{ box-shadow:0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+  .block .b-title{ font-size:12.5px; font-weight:600; line-height:1.2; word-break:break-word; }
+  .block .b-title .ph{ opacity:.72; font-weight:500; font-style:italic; }
+  .block .b-time{ font-size:10.5px; font-weight:500; opacity:.85; margin-top:1px; }
+  .block .resize{ position:absolute; left:0; right:0; bottom:0; height:9px; cursor:ns-resize; }
+  .block .resize::after{ content:""; position:absolute; left:50%; bottom:3px; width:20px; height:2px; border-radius:2px; background:rgba(255,255,255,.6); transform:translateX(-50%); opacity:0; transition:opacity .12s; }
+  .block:hover .resize::after{ opacity:1; }
+  .block.tiny{ padding-top:2px; }
+  .block.tiny .b-time{ display:none; }
+
+  .ghost{
+    position:fixed; z-index:50; pointer-events:none; color:#fff; font-weight:600; font-size:13px;
+    border-radius:9px; padding:8px 12px; box-shadow:0 8px 22px rgba(0,0,0,.28); opacity:.95;
+  }
+
+  body.dragging{ cursor:grabbing; }
+  body.dragging *{ user-select:none !important; }
+
+  /* ---------- editor ---------- */
+  .editor{
+    position:fixed; z-index:60; width:236px; background:var(--panel);
+    border:1px solid var(--line-strong); border-radius:13px; box-shadow:0 12px 34px rgba(28,34,48,.22);
+    padding:13px; display:none;
+  }
+  .editor.open{ display:block; }
+  .editor input.t-in{
+    width:100%; font:inherit; font-size:14px; font-weight:600; color:var(--ink);
+    border:1px solid var(--line-strong); border-radius:8px; padding:8px 9px;
+  }
+  .editor input.t-in:focus{ outline:2px solid var(--ring); outline-offset:1px; border-color:transparent; }
+  .editor .lab{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:11px 2px 6px; }
+  .owner-pick{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+  .owner-pick button{
+    font:inherit; font-size:12px; font-weight:600; color:#fff; border:none; border-radius:8px;
+    padding:8px 4px; cursor:pointer; opacity:.45; transition:opacity .12s, transform .08s;
+  }
+  .owner-pick button:hover{ transform:translateY(-1px); }
+  .owner-pick button.sel{ opacity:1; box-shadow:0 0 0 2px var(--panel), 0 0 0 3.5px currentColor; }
+  .owner-pick .oa{ background:var(--a); } .owner-pick .ob{ background:var(--b); } .owner-pick .obo{ background:var(--both); }
+  .editor .ed-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:13px; }
+  .editor .del{ font:inherit; font-size:12.5px; font-weight:600; color:var(--b); background:none; border:none; cursor:pointer; padding:4px 2px; }
+  .editor .del:hover{ text-decoration:underline; }
+  .editor .done{ font:inherit; font-size:12.5px; font-weight:600; color:#fff; background:var(--ink); border:none; border-radius:8px; padding:7px 14px; cursor:pointer; }
+
+  @media (max-width:640px){
+    .wrap{ padding:16px 12px 32px; }
+    .who{ margin-left:0; }
+    .cal-scroll{ max-height:calc(100vh - 300px); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <h1>Our Week</h1>
+      <p>A shared weekly plan. Drag a colored block onto the grid, or draw on it, then say whose time it is.</p>
+    </div>
+    <div class="who">
+      <div class="who-field">
+        <label>First person</label>
+        <div class="dot-row"><span class="dot" style="background:var(--a)"></span><input id="nameA" maxlength="18" value="Me"></div>
+      </div>
+      <div class="who-field">
+        <label>Second person</label>
+        <div class="dot-row"><span class="dot" style="background:var(--b)"></span><input id="nameB" maxlength="18" value="My wife"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="palette">
+      <button class="chip a"   data-owner="a"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5h9M6.5 2v9" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg><span data-namechip="a">Me</span></button>
+      <button class="chip b"   data-owner="b"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5h9M6.5 2v9" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg><span data-namechip="b">My wife</span></button>
+      <button class="chip both" data-owner="both"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5h9M6.5 2v9" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>Both</button>
+    </div>
+    <span class="hint"><b>Drag a block</b> onto the calendar &middot; draw to size it &middot; click to edit</span>
+    <span class="spacer"></span>
+    <div class="tally" id="tally"></div>
+    <button class="btn-clear" id="clearBtn">Clear week</button>
+  </div>
+
+  <div class="cal-card">
+    <div class="cal-scroll" id="scroll">
+      <div class="grid" id="grid">
+        <div class="corner"></div>
+        <!-- day heads + gutter + columns injected -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- editor popover -->
+<div class="editor" id="editor">
+  <input class="t-in" id="edTitle" placeholder="What is it?" maxlength="60">
+  <div class="lab">Whose time?</div>
+  <div class="owner-pick" id="ownerPick">
+    <button class="oa" data-o="a"><span data-namepick="a">Me</span></button>
+    <button class="ob" data-o="b"><span data-namepick="b">Wife</span></button>
+    <button class="obo" data-o="both">Both</button>
+  </div>
+  <div class="ed-foot">
+    <button class="del" id="edDelete">Delete</button>
+    <button class="done" id="edDone">Done</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- constants ---------- */
+  var DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var DAY_FULL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var START_HOUR = 4, END_HOUR = 22;
+  var SLOTS = (END_HOUR - START_HOUR) * 2;   // 30-min slots
+  var SLOT_H = 30;
+  var KEY_B = "ourweek_blocks_v1", KEY_S = "ourweek_settings_v1";
+
+  /* ---------- state ---------- */
+  var blocks = [];
+  var settings = { nameA: "Me", nameB: "My wife" };
+  var selectedId = null;
+  var lastOwner = "a";
+
+  /* ---------- elements ---------- */
+  var grid = document.getElementById("grid");
+  var scroll = document.getElementById("scroll");
+  var editor = document.getElementById("editor");
+  var edTitle = document.getElementById("edTitle");
+  var ownerPick = document.getElementById("ownerPick");
+  var tallyEl = document.getElementById("tally");
+  var dayCols = [];
+
+  /* ---------- helpers ---------- */
+  function uid(){ return "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function esc(s){ return (s||"").replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function fmtTime(slot){
+    var min = START_HOUR*60 + slot*30;
+    var h = Math.floor(min/60), m = min%60;
+    var per = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + (m ? ":"+pad(m) : "") + " " + per;
+  }
+  function fmtRange(start, dur){ return fmtTime(start) + " – " + fmtTime(start+dur); }
+
+  /* ---------- build the static grid ---------- */
+  function buildGrid(){
+    for (var d=0; d<7; d++){
+      var head = document.createElement("div");
+      head.className = "day-head" + (d>=5 ? " weekend" : "");
+      head.innerHTML = '<div class="d-name">'+DAYS[d]+'</div><div class="d-sub">'+DAY_FULL[d]+'</div>';
+      grid.appendChild(head);
+    }
+    var gutter = document.createElement("div");
+    gutter.className = "gutter";
+    for (var h=START_HOUR; h<=END_HOUR; h++){
+      var slot = (h - START_HOUR) * 2;
+      var tick = document.createElement("div");
+      tick.className = "tick";
+      tick.style.top = (slot * SLOT_H) + "px";
+      tick.textContent = fmtTime(slot);
+      gutter.appendChild(tick);
+    }
+    grid.appendChild(gutter);
+    for (var c=0; c<7; c++){
+      var col = document.createElement("div");
+      col.className = "day-col" + (c>=5 ? " weekend" : "");
+      col.dataset.day = c;
+      grid.appendChild(col);
+      dayCols.push(col);
+    }
+  }
+
+  /* ---------- overlap layout (side-by-side columns) ---------- */
+  function computeLayout(items){
+    var sorted = items.slice().sort(function(a,b){
+      return (a.startSlot - b.startSlot) || ((a.startSlot+a.duration) - (b.startSlot+b.duration));
+    });
+    var result = {};
+    var cluster = [], clusterEnd = -1;
+    function flush(cl){
+      var cols = [];
+      cl.forEach(function(b){
+        var placed = false;
+        for (var i=0;i<cols.length;i++){
+          var last = cols[i][cols[i].length-1];
+          if (b.startSlot >= last.startSlot + last.duration){ cols[i].push(b); result[b.id] = {col:i}; placed = true; break; }
+        }
+        if (!placed){ cols.push([b]); result[b.id] = {col:cols.length-1}; }
+      });
+      cl.forEach(function(b){ result[b.id].colCount = cols.length; });
+    }
+    sorted.forEach(function(b){
+      if (cluster.length && b.startSlot >= clusterEnd){ flush(cluster); cluster = []; clusterEnd = -1; }
+      cluster.push(b);
+      clusterEnd = Math.max(clusterEnd, b.startSlot + b.duration);
+    });
+    if (cluster.length) flush(cluster);
+    return result;
+  }
+
+  /* ---------- render ---------- */
+  var rafPending = false;
+  function scheduleRender(){
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(function(){ rafPending = false; render(); });
+  }
+  function render(){
+    for (var d=0; d<7; d++){
+      var col = dayCols[d];
+      var old = col.querySelectorAll(".block");
+      for (var i=0;i<old.length;i++) old[i].remove();
+      var items = blocks.filter(function(b){ return b.day === d; });
+      var lay = computeLayout(items);
+      items.forEach(function(b){
+        var l = lay[b.id] || {col:0,colCount:1};
+        var wPct = 100 / l.colCount;
+        var el = document.createElement("div");
+        el.className = "block owner-" + b.owner + (b.id === selectedId ? " selected" : "") + (b.duration < 2 ? " tiny" : "");
+        el.dataset.id = b.id;
+        el.style.top = (b.startSlot * SLOT_H) + "px";
+        el.style.height = (b.duration * SLOT_H - 3) + "px";
+        el.style.left = "calc(" + (l.col * wPct) + "% + 2px)";
+        el.style.width = "calc(" + wPct + "% - 4px)";
+        el.innerHTML =
+          '<div class="b-title">' + (b.title ? esc(b.title) : '<span class="ph">Untitled</span>') + '</div>' +
+          '<div class="b-time">' + fmtRange(b.startSlot, b.duration) + '</div>' +
+          '<div class="resize"></div>';
+        col.appendChild(el);
+      });
+    }
+    updateTally();
+  }
+
+  function updateTally(){
+    var ha=0, hb=0, hboth=0;
+    blocks.forEach(function(b){
+      var hrs = b.duration * 0.5;
+      if (b.owner === "a") ha += hrs; else if (b.owner === "b") hb += hrs; else hboth += hrs;
+    });
+    function f(n){ return (Math.round(n*10)/10) + "h"; }
+    tallyEl.innerHTML =
+      '<span class="t"><span class="dot" style="background:var(--a)"></span>'+esc(settings.nameA)+' '+f(ha)+'</span>'+
+      '<span class="t"><span class="dot" style="background:var(--b)"></span>'+esc(settings.nameB)+' '+f(hb)+'</span>'+
+      '<span class="t"><span class="dot" style="background:var(--both)"></span>Both '+f(hboth)+'</span>';
+  }
+
+  /* ---------- geometry helpers ---------- */
+  function dayFromX(clientX){
+    for (var d=0; d<7; d++){
+      var r = dayCols[d].getBoundingClientRect();
+      if (clientX >= r.left && clientX < r.right) return d;
+    }
+    return null;
+  }
+  function slotFromY(col, clientY){
+    var r = col.getBoundingClientRect();
+    return clamp(Math.floor((clientY - r.top) / SLOT_H), 0, SLOTS - 1);
+  }
+
+  /* ---------- pointer: create by drawing on the grid (mouse) ---------- */
+  grid.addEventListener("pointerdown", function(e){
+    var blockEl = e.target.closest(".block");
+    if (blockEl){ startBlockGesture(e, blockEl); return; }
+    var col = e.target.closest(".day-col");
+    if (!col) return;
+    if (e.pointerType !== "mouse") return; // let touch scroll the grid
+    startDraw(e, col);
+  });
+
+  function startDraw(e, col){
+    e.preventDefault();
+    var day = +col.dataset.day;
+    var anchor = slotFromY(col, e.clientY);
+    var b = { id: uid(), day: day, startSlot: anchor, duration: 1, title: "", owner: lastOwner };
+    blocks.push(b);
+    selectedId = b.id;
+    var moved = false;
+    closeEditor();
+    document.body.classList.add("dragging");
+    render();
+    function move(ev){
+      var cur = slotFromY(col, ev.clientY);
+      if (cur !== anchor) moved = true;
+      var s = Math.min(anchor, cur), en = Math.max(anchor, cur);
+      b.startSlot = s; b.duration = (en - s) + 1;
+      scheduleRender();
+    }
+    function up(){
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      document.body.classList.remove("dragging");
+      if (!moved){ b.startSlot = clamp(anchor, 0, SLOTS-2); b.duration = 2; } // simple click = 1 hour
+      render(); save(); openEditor(b);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  /* ---------- pointer: move / resize an existing block ---------- */
+  function startBlockGesture(e, el){
+    e.preventDefault();
+    var id = el.dataset.id;
+    var b = blocks.filter(function(x){ return x.id === id; })[0];
+    if (!b) return;
+    var isResize = !!e.target.closest(".resize");
+    var startX = e.clientX, startY = e.clientY;
+    var orig = { day:b.day, startSlot:b.startSlot, duration:b.duration };
+    var moved = false;
+    selectedId = id;
+    closeEditor();
+    render();
+    function move(ev){
+      var dx = ev.clientX - startX, dy = ev.clientY - startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4){ moved = true; document.body.classList.add("dragging"); }
+      var dSlots = Math.round(dy / SLOT_H);
+      if (isResize){
+        b.duration = clamp(orig.duration + dSlots, 1, SLOTS - b.startSlot);
+      } else {
+        b.startSlot = clamp(orig.startSlot + dSlots, 0, SLOTS - b.duration);
+        var nd = dayFromX(ev.clientX);
+        if (nd !== null) b.day = nd;
+      }
+      scheduleRender();
+    }
+    function up(){
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      document.body.classList.remove("dragging");
+      render();
+      if (!moved){ openEditor(b); } else { save(); }
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  /* ---------- pointer: drag a palette chip onto the grid ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(chip){
+    chip.addEventListener("pointerdown", function(e){
+      e.preventDefault();
+      var owner = chip.dataset.owner;
+      var ghost = document.createElement("div");
+      ghost.className = "ghost";
+      ghost.style.background = owner === "a" ? "var(--a)" : owner === "b" ? "var(--b)" : "var(--both)";
+      ghost.textContent = owner === "a" ? settings.nameA : owner === "b" ? settings.nameB : "Both";
+      document.body.appendChild(ghost);
+      document.body.classList.add("dragging");
+      var preview = null;
+      function place(ev){
+        ghost.style.left = (ev.clientX + 12) + "px";
+        ghost.style.top = (ev.clientY - 14) + "px";
+        var day = dayFromX(ev.clientX);
+        var overGrid = day !== null;
+        var sr = scroll.getBoundingClientRect();
+        var inScroll = ev.clientY > sr.top && ev.clientY < sr.bottom;
+        if (overGrid && inScroll){
+          var col = dayCols[day];
+          var slot = slotFromY(col, ev.clientY);
+          if (!preview){ preview = { id: uid(), title:"", owner:owner }; blocks.push(preview); selectedId = preview.id; }
+          preview.day = day;
+          preview.startSlot = clamp(slot, 0, SLOTS - 2);
+          preview.duration = 2;
+          scheduleRender();
+        } else if (preview){
+          blocks = blocks.filter(function(x){ return x.id !== preview.id; });
+          preview = null; scheduleRender();
+        }
+      }
+      function up(ev){
+        window.removeEventListener("pointermove", place);
+        window.removeEventListener("pointerup", up);
+        ghost.remove();
+        document.body.classList.remove("dragging");
+        if (preview){ lastOwner = owner; render(); save(); openEditor(preview); }
+      }
+      window.addEventListener("pointermove", place);
+      window.addEventListener("pointerup", up);
+    });
+  });
+
+  /* ---------- editor ---------- */
+  var editing = null;
+  function openEditor(b){
+    editing = b;
+    selectedId = b.id;
+    edTitle.value = b.title || "";
+    setOwnerButtons(b.owner);
+    editor.classList.add("open");
+    positionEditor(b);
+    render();
+    setTimeout(function(){ edTitle.focus(); edTitle.select(); }, 30);
+  }
+  function positionEditor(b){
+    var col = dayCols[b.day];
+    var el = col.querySelector('.block[data-id="'+b.id+'"]');
+    var ew = 236, eh = editor.offsetHeight || 210, gap = 10;
+    var left, top;
+    if (el){
+      var r = el.getBoundingClientRect();
+      left = r.right + gap;
+      if (left + ew > window.innerWidth - 8) left = r.left - ew - gap;
+      if (left < 8) left = 8;
+      top = clamp(r.top, 8, window.innerHeight - eh - 8);
+    } else {
+      left = (window.innerWidth - ew)/2; top = 90;
+    }
+    editor.style.left = left + "px";
+    editor.style.top = top + "px";
+  }
+  function setOwnerButtons(owner){
+    Array.prototype.forEach.call(ownerPick.children, function(btn){
+      btn.classList.toggle("sel", btn.dataset.o === owner);
+    });
+  }
+  function closeEditor(){ editor.classList.remove("open"); editing = null; }
+
+  edTitle.addEventListener("input", function(){ if (editing){ editing.title = edTitle.value; render(); save(); } });
+  edTitle.addEventListener("keydown", function(e){ if (e.key === "Enter"){ closeEditor(); selectedId=null; render(); } });
+  Array.prototype.forEach.call(ownerPick.children, function(btn){
+    btn.addEventListener("click", function(){
+      if (!editing) return;
+      editing.owner = btn.dataset.o; lastOwner = btn.dataset.o;
+      setOwnerButtons(editing.owner); render(); save();
+    });
+  });
+  document.getElementById("edDelete").addEventListener("click", function(){
+    if (!editing) return;
+    blocks = blocks.filter(function(x){ return x.id !== editing.id; });
+    closeEditor(); selectedId = null; render(); save();
+  });
+  document.getElementById("edDone").addEventListener("click", function(){ closeEditor(); selectedId = null; render(); });
+
+  // click outside closes editor
+  document.addEventListener("pointerdown", function(e){
+    if (!editor.classList.contains("open")) return;
+    if (editor.contains(e.target)) return;
+    if (e.target.closest(".block")) return;
+    if (e.target.closest(".chip")) return;
+    closeEditor(); selectedId = null; render();
+  }, true);
+  // editor follows on scroll, or closes if block scrolled away
+  scroll.addEventListener("scroll", function(){ if (editing) positionEditor(editing); });
+
+  /* ---------- names ---------- */
+  var nameA = document.getElementById("nameA"), nameB = document.getElementById("nameB");
+  function applyNames(){
+    nameA.value = settings.nameA; nameB.value = settings.nameB;
+    document.querySelector('[data-namechip="a"]').textContent = settings.nameA;
+    document.querySelector('[data-namechip="b"]').textContent = settings.nameB;
+    document.querySelector('[data-namepick="a"]').textContent = settings.nameA;
+    document.querySelector('[data-namepick="b"]').textContent = settings.nameB;
+    updateTally();
+  }
+  nameA.addEventListener("input", function(){ settings.nameA = nameA.value || "Person 1"; applyNames(); save(); });
+  nameB.addEventListener("input", function(){ settings.nameB = nameB.value || "Person 2"; applyNames(); save(); });
+
+  /* ---------- clear ---------- */
+  document.getElementById("clearBtn").addEventListener("click", function(){
+    if (!blocks.length) return;
+    if (confirm("Remove every block from the week? This can't be undone.")){
+      blocks = []; selectedId = null; closeEditor(); render(); save();
+    }
+  });
+
+  /* ---------- persistence ----------
+     Inside the Claude preview this uses the artifact's shared storage.
+     Anywhere else (GitHub Pages, any normal web host) it falls back to the
+     browser's localStorage, so the week survives a refresh on that device.
+     Note: localStorage is per-browser — it does not sync between two
+     devices or two people on its own. */
+  var saveT = null;
+  function cloudOK(){ return !!(window.storage && window.storage.set); }
+  function applyLoaded(blocksRaw, settingsRaw){
+    if (settingsRaw){ try { var s = JSON.parse(settingsRaw); if (s){ settings.nameA = s.nameA || settings.nameA; settings.nameB = s.nameB || settings.nameB; } } catch(e){} }
+    if (blocksRaw){ try { var arr = JSON.parse(blocksRaw); if (Array.isArray(arr)) blocks = arr; } catch(e){} }
+  }
+  function save(){
+    clearTimeout(saveT);
+    saveT = setTimeout(function(){
+      var bj = JSON.stringify(blocks), sj = JSON.stringify(settings);
+      if (cloudOK()){
+        try { window.storage.set(KEY_B, bj, true); } catch(e){}
+        try { window.storage.set(KEY_S, sj, true); } catch(e){}
+      } else {
+        try { localStorage.setItem(KEY_B, bj); } catch(e){}
+        try { localStorage.setItem(KEY_S, sj); } catch(e){}
+      }
+    }, 250);
+  }
+  function load(){
+    if (cloudOK()){
+      return window.storage.get(KEY_S, true).catch(function(){ return null; })
+        .then(function(rs){
+          return window.storage.get(KEY_B, true).catch(function(){ return null; })
+            .then(function(rb){ applyLoaded(rb && rb.value, rs && rs.value); });
+        });
+    }
+    var b = null, s = null;
+    try { b = localStorage.getItem(KEY_B); } catch(e){}
+    try { s = localStorage.getItem(KEY_S); } catch(e){}
+    applyLoaded(b, s);
+    return Promise.resolve();
+  }
+
+  /* ---------- init ---------- */
+  buildGrid();
+  applyNames();
+  render();
+  load().then(function(){ applyNames(); render(); });
+  // start scrolled near a typical morning
+  scroll.scrollTop = 3 * SLOT_H * 2; // ~7am
+})();
+</script>
+</body>
+</html>
